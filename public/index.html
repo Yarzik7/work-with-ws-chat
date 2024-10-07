@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <style>
+      h1,
+      h2 {
+        margin: 0;
+        padding: 0;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .fields-box {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 10px;
+      }
+
+      .input-box {
+        width: 300px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .input {
+        width: 100%;
+        height: 30px;
+
+        border-radius: 8px;
+      }
+
+      .button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100px;
+        height: 30px;
+        margin-bottom: 10px;
+
+        border-radius: 8px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: black;
+          color: white;
+        }
+      }
+
+      .message-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .message-item {
+        padding: 10px 10px;
+        color: blue;
+        border: 1px solid blue;
+        border-radius: 8px;
+      }
+
+      .users-online {
+        margin-bottom: 10px;
+      }
+
+      .users-online-list {
+        display: flex;
+        gap: 3px;
+        padding: 10px 10px;
+
+        background-color: blue;
+        color: white;
+        border-radius: 8px;
+
+        overflow: hidden;
+        overflow-x: auto;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <title>SocketIO</title>
+  </head>
+  <body>
+    <div id="fields-box" class="fields-box">
+      <div class="input-box">
+        <label for="msg_name" class="label">Name</label>
+        <input id="msg_name" type="text" class="input" />
+      </div>
+      <div class="input-box">
+        <label for="msg_txt" class="label">Message</label>
+        <input id="msg_txt" type="text" class="input" />
+      </div>
+    </div>
+    <button id="msg_btn" type="button" class="button">Send</button>
+    <div class="users-online">
+      <h2>Users online:</h2>
+      <ul id="users-online-list" class="users-online-list"></ul>
+    </div>
+    <div class="chat">
+      <ul id="message-list" class="message-list"></ul>
+    </div>
+
+    <script>
+      const usersList = document.getElementById('users');
+      const board = document.getElementById('board');
+      const fieldsBox = document.getElementById('fields-box');
+      const userMessage = document.getElementById('msg_txt');
+      const userName = document.getElementById('msg_name');
+      const sendButton = document.getElementById('msg_btn');
+      const usersOnlineList = document.getElementById('users-online-list');
+      const messageList = document.getElementById('message-list');
+
+      const socket = io();
+
+      const messages = [];
+      let users = [];
+
+      const renderListOfUsers = data => {
+        users = Object.values(data);
+
+        usersOnlineList.innerHTML = '';
+        usersOnlineList.insertAdjacentHTML(
+          'beforeend',
+          users.map(user => `<li class="user-item">${user}, </li>`).join('')
+        );
+      };
+
+      const renderListOfMessages = data => {
+        messages.push(data);
+        messageList.insertAdjacentHTML('beforeend', `<li class="message-item">${data.name}: ${data.message}</li>`);
+      };
+
+      socket.on('user', renderListOfUsers);
+      socket.on('message', renderListOfMessages);
+
+      const sendUserMessage = () => {
+        let name = userName.value;
+        const message = userMessage.value;
+
+        if (message === '' || name === '') {
+          alert('Please fill in all fields - Name and Message');
+          return;
+        }
+
+        socket.emit('message', {
+          message,
+          name,
+        });
+
+        userMessage.value = '';
+        userMessage.focus();
+      };
+
+      const pressEnterKey = e => {
+        if (e.keyCode === 13) {
+          sendUserMessage();
+        }
+      };
+
+      sendButton.addEventListener('click', sendUserMessage);
+      fieldsBox.addEventListener('keydown', pressEnterKey);
+    </script>
+  </body>
+</html>
